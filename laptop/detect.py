@@ -4,6 +4,7 @@ Runs on the LAPTOP, not the UNO Q. Draws the best detection, the screen
 center line, and the horizontal error the car will eventually drive to zero.
 
     python laptop/detect.py                    # uses the only .pt in laptop/models/
+    python laptop/detect.py --device gpu       # CUDA instead of the default cpu
     python laptop/detect.py --model laptop/models/best.pt --camera 0 --imgsz 640
 
 Press q (or Esc) in the preview window to quit.
@@ -73,12 +74,14 @@ def main():
     ap.add_argument("--camera", type=int, default=0, help="webcam index")
     ap.add_argument("--imgsz", type=int, default=640, help="inference size; try 320 if slow")
     ap.add_argument("--conf", type=float, default=0.5, help="minimum confidence")
-    ap.add_argument("--device", default=None, help="'cpu', '0' for first CUDA GPU (default: auto)")
+    ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu",
+                    help="run inference on cpu (default) or the first CUDA gpu")
     args = ap.parse_args()
+    device = "0" if args.device == "gpu" else "cpu"  # ultralytics device names
 
     model_path = find_model(args.model)
     model = YOLO(str(model_path))
-    print(f"Model: {model_path}  classes: {model.names}")
+    print(f"Model: {model_path}  classes: {model.names}  device: {args.device}")
 
     cap = cv2.VideoCapture(args.camera)
     if not cap.isOpened():
@@ -95,7 +98,7 @@ def main():
                 break
             h, w = frame.shape[:2]
             result = model.predict(frame, imgsz=args.imgsz, conf=args.conf,
-                                   device=args.device, verbose=False)[0]
+                                   device=device, verbose=False)[0]
             det = best_detection(result, w, h)
 
             now = time.perf_counter()
