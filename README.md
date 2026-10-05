@@ -54,8 +54,8 @@ arduino-app-cli app start ~/ArduinoApps/door-to-door-service
 - [x] Train YOLOv8n minifig model
 - [x] Laptop detection (~30 fps GPU, ~25 fps CPU)
 - [x] Publish detections over MQTT (public broker)
-- [ ] UNO Q subscribes and logs detections
-- [ ] Sketch + Bridge: drive motors through the Maker Drive
+- [x] UNO Q subscribes and logs detections
+- [x] Sketch + Bridge: drive motors through the Maker Drive
 - [ ] Close the loop: P-control on `cx`, timeout stop, tuning
 - [ ] Move to a local Mosquitto broker
 - [ ] Steering (differential drive)
