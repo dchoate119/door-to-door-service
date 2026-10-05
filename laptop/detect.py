@@ -2,15 +2,18 @@
 
 Runs on the LAPTOP, not the UNO Q. Draws the best detection, the screen
 center line, and the horizontal error the car will eventually drive to zero.
+With --mqtt, also publishes every frame's detection as JSON for the car.
 
     python laptop/detect.py                    # uses the only .pt in laptop/models/
     python laptop/detect.py --device gpu       # CUDA instead of the default cpu
     python laptop/detect.py --model laptop/models/best.pt --camera 0 --imgsz 640
+    python laptop/detect.py --mqtt             # publish to broker on localhost
 
 Press q (or Esc) in the preview window to quit.
 """
 
 import argparse
+import json
 import time
 from pathlib import Path
 
@@ -18,6 +21,7 @@ import cv2
 from ultralytics import YOLO
 
 MODELS_DIR = Path(__file__).parent / "models"
+TOPIC = "d2d/detection"
 
 
 def find_model(path):
@@ -50,6 +54,24 @@ def best_detection(result, frame_w, frame_h):
     }
 
 
+def connect_mqtt(host, port):
+    import paho.mqtt.client as mqtt  # only needed with --mqtt
+
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="d2d-laptop")
+    client.connect(host, port)
+    client.loop_start()
+    print(f"MQTT: publishing to {host}:{port} topic '{TOPIC}'")
+    return client
+
+
+def to_message(det):
+    """JSON payload for the car. Coordinates are normalized 0..1."""
+    msg = {"t": time.time(), "found": det is not None}
+    if det:
+        msg.update({k: round(det[k], 4) for k in ("cx", "cy", "w", "h", "conf")})
+    return json.dumps(msg)
+
+
 def draw(frame, det, fps):
     h, w = frame.shape[:2]
     cv2.line(frame, (w // 2, 0), (w // 2, h), (255, 255, 0), 1)
@@ -76,8 +98,13 @@ def main():
     ap.add_argument("--conf", type=float, default=0.5, help="minimum confidence")
     ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu",
                     help="run inference on cpu (default) or the first CUDA gpu")
+    ap.add_argument("--mqtt", action="store_true", help="publish detections over MQTT")
+    ap.add_argument("--broker", default="localhost", help="MQTT broker host")
+    ap.add_argument("--port", type=int, default=1883, help="MQTT broker port")
     args = ap.parse_args()
     device = "0" if args.device == "gpu" else "cpu"  # ultralytics device names
+
+    mqtt_client = connect_mqtt(args.broker, args.port) if args.mqtt else None
 
     model_path = find_model(args.model)
     model = YOLO(str(model_path))
@@ -100,6 +127,8 @@ def main():
             result = model.predict(frame, imgsz=args.imgsz, conf=args.conf,
                                    device=device, verbose=False)[0]
             det = best_detection(result, w, h)
+            if mqtt_client:
+                mqtt_client.publish(TOPIC, to_message(det), qos=0)
 
             now = time.perf_counter()
             inst_fps = 1.0 / max(now - last, 1e-6)
@@ -119,6 +148,10 @@ def main():
             if cv2.waitKey(1) & 0xFF in (ord("q"), 27):
                 break
     finally:
+        if mqtt_client:
+            mqtt_client.publish(TOPIC, to_message(None), qos=0)  # tell the car to stop
+            mqtt_client.loop_stop()
+            mqtt_client.disconnect()
         cap.release()
         cv2.destroyAllWindows()
 

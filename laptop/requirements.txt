@@ -1,2 +1,3 @@
 ultralytics>=8.0
 opencv-python
+paho-mqtt>=2.0
