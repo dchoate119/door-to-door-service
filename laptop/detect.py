@@ -127,6 +127,7 @@ def main():
             if not ok:
                 print("Camera read failed")
                 break
+            frame = cv2.flip(frame, 1)  # webcam image is mirrored; cx follows the flipped view
             h, w = frame.shape[:2]
             result = model.predict(frame, imgsz=args.imgsz, conf=args.conf,
                                    device=device, verbose=False)[0]
