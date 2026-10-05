@@ -7,7 +7,8 @@ With --mqtt, also publishes every frame's detection as JSON for the car.
     python laptop/detect.py                    # uses the only .pt in laptop/models/
     python laptop/detect.py --device gpu       # CUDA instead of the default cpu
     python laptop/detect.py --model laptop/models/best.pt --camera 0 --imgsz 640
-    python laptop/detect.py --mqtt             # publish to broker on localhost
+    python laptop/detect.py --mqtt             # publish to the public test broker
+    python laptop/detect.py --mqtt --broker localhost   # once a local broker runs
 
 Press q (or Esc) in the preview window to quit.
 """
@@ -21,7 +22,10 @@ import cv2
 from ultralytics import YOLO
 
 MODELS_DIR = Path(__file__).parent / "models"
-TOPIC = "d2d/detection"
+# Public broker for now; switch to a local Mosquitto (e.g. "localhost") later.
+# Topic is namespaced because anyone can publish on a public broker.
+DEFAULT_BROKER = "test.mosquitto.org"
+TOPIC = "dchoate119/d2d/detection"
 
 
 def find_model(path):
@@ -99,7 +103,7 @@ def main():
     ap.add_argument("--device", choices=["cpu", "gpu"], default="cpu",
                     help="run inference on cpu (default) or the first CUDA gpu")
     ap.add_argument("--mqtt", action="store_true", help="publish detections over MQTT")
-    ap.add_argument("--broker", default="localhost", help="MQTT broker host")
+    ap.add_argument("--broker", default=DEFAULT_BROKER, help="MQTT broker host")
     ap.add_argument("--port", type=int, default=1883, help="MQTT broker port")
     args = ap.parse_args()
     device = "0" if args.device == "gpu" else "cpu"  # ultralytics device names
