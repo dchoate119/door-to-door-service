@@ -21,11 +21,11 @@ TOPIC = "dchoate119/d2d/detection"
 STALE_AFTER = 0.3  # seconds without a message before the car must stop
 
 # Control tuning. speed = DIRECTION * (MIN_SPEED + KP * |err|), err = cx - 0.5
-DIRECTION = 1      # flip to -1 if the car drives away from center instead of toward it
-KP = 400           # speed per unit of error (err of 0.1 -> +40)
-MIN_SPEED = 60     # smallest speed that actually moves the car
-MAX_SPEED = 150    # 0..255 cap
-DEADBAND = 0.02    # |err| below this counts as parked
+DIRECTION = -1     # flip sign if the car drives away from center instead of toward it
+KP = 100           # speed per unit of error (err of 0.1 -> +10)
+MIN_SPEED = 40     # smallest speed that actually moves the car
+MAX_SPEED = 100    # 0..255 cap
+DEADBAND = 0.03    # |err| below this counts as parked
 CONTROL_HZ = 20
 
 MOTOR_TEST = False  # pulse the motors instead of running the controller
