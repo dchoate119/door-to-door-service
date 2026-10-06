@@ -56,6 +56,4 @@ arduino-app-cli app start ~/ArduinoApps/door-to-door-service
 - [x] Publish detections over MQTT (public broker)
 - [x] UNO Q subscribes and logs detections
 - [x] Sketch + Bridge: drive motors through the Maker Drive
-- [ ] Close the loop: P-control on `cx`, timeout stop, tuning
-- [ ] Move to a local Mosquitto broker
-- [ ] Steering (differential drive)
+- [x] Close the loop: PD-control on `cx`, timeout stop, tuning
